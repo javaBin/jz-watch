@@ -19,7 +19,7 @@ public record VideoResponse(
         String embedUrl, // computed: https://player.vimeo.com/video/{vimeoId}
         String language,
         String format,
-        Integer lengthMinutes,
+        Integer talkLengthMinutes,
         String room,
         String startTime,
         String endTime,

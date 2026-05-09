@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -86,10 +88,18 @@ public class VideoImporter {
                 continue;
 
             Optional<Conference> optConf = conferenceRepository.findById(confRef.id());
-            if (!force && optConf.isPresent() && Boolean.TRUE.equals(optConf.get().getCompleted())) {
-                log.info("VideoImporter: skipping {}, already fully imported", confRef.slug());
-                summary.put(confRef.slug(), 0);
-                continue;
+            if (!force && optConf.isPresent()) {
+                Conference c = optConf.get();
+                boolean fullyImported = c.getImportedVideos() != null && c.getTotalVideos() != null && 
+                                       c.getImportedVideos().equals(c.getTotalVideos()) && 
+                                       c.getImportedVideos() > 0;
+                
+                if (fullyImported || Boolean.TRUE.equals(c.getCompleted())) {
+                    log.info("VideoImporter: skipping {}, already fully imported ({}/{})", 
+                        confRef.slug(), c.getImportedVideos(), c.getTotalVideos());
+                    summary.put(confRef.slug(), 0);
+                    continue;
+                }
             }
 
             try {
@@ -104,9 +114,7 @@ public class VideoImporter {
         return summary;
     }
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
     protected int importConference(ConferenceRef confRef, int year, int baseScore, boolean force) {
-        upsertConference(confRef.id(), confRef.slug(), confRef.name(), year);
         List<SleepingPillSession> sessions;
         try {
             sessions = sleepingPillClient.getSessions(confRef.slug()).sessions();
@@ -115,34 +123,80 @@ public class VideoImporter {
             throw new RuntimeException("Failed to fetch sessions", e);
         }
 
-        int count = 0;
-        for (SleepingPillSession session : sessions) {
-            String vimeoId = VimeoUtils.extractId(session.video());
-            if (vimeoId == null || vimeoId.isBlank())
-                continue;
+        long totalEligible = sessions.stream()
+                .filter(s -> VimeoUtils.extractId(s.video()) != null)
+                .count();
 
-            try {
-                importVideo(session, vimeoId, confRef.id(), baseScore, force);
-                count++;
-            } catch (Exception e) {
-                log.error("Failed to import video {}: {}", session.id(), e.getMessage());
-            }
+        upsertConference(confRef.id(), confRef.slug(), confRef.name(), year, (int) totalEligible);
+
+        AtomicInteger importedCount = new AtomicInteger(0);
+        Semaphore semaphore = new Semaphore(10);
+
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<CompletableFuture<Void>> futures = sessions.stream()
+                    .map(session -> {
+                        String vimeoId = VimeoUtils.extractId(session.video());
+                        if (vimeoId == null || vimeoId.isBlank())
+                            return null;
+
+                        return CompletableFuture.runAsync(() -> {
+                            try {
+                                semaphore.acquire();
+                                importVideo(session, vimeoId, confRef.id(), baseScore, force);
+                                int current = importedCount.incrementAndGet();
+                                updateProgress(confRef.id(), current);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            } catch (Exception e) {
+                                log.error("Failed to import video {}: {}", session.id(), e.getMessage());
+                            } finally {
+                                semaphore.release();
+                            }
+                        }, executor);
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         }
 
-        videoRepository.rebuildSearchVectorEn(confRef.id());
-        videoRepository.rebuildSearchVectorNo(confRef.id());
-        videoRepository.updateViewBoosts();
-        markConferenceCompleted(confRef.id());
+        int finalCount = importedCount.get();
+        rebuildStats(confRef.id(), (int) totalEligible, finalCount);
 
-        log.info("VideoImporter: {} → {} videos imported (force={})", confRef.slug(), count, force);
-        return count;
+        log.info("VideoImporter: {} → {}/{} videos imported (force={})", confRef.slug(), finalCount, totalEligible,
+                force);
+        return finalCount;
     }
 
-    private void importVideo(SleepingPillSession session, String vimeoId, String confId, int baseScore, boolean force) {
+    private synchronized void updateProgress(String conferenceId, int count) {
+        conferenceRepository.updateImportedVideos(conferenceId, count);
+    }
+
+    @Transactional
+    protected void rebuildStats(String conferenceId, int totalEligible, int importedCount) {
+        videoRepository.rebuildSearchVectorEn(conferenceId);
+        videoRepository.rebuildSearchVectorNo(conferenceId);
+        videoRepository.updateViewBoosts();
+
+        markConferenceCompleted(conferenceId, totalEligible, importedCount);
+    }
+
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    protected void importVideo(SleepingPillSession session, String vimeoId, String confId, int baseScore, boolean force) {
         String videoId = session.id();
         List<String> keywords = parseKeywords(session.suggestedKeywords());
+        String sessionRawJson = null;
+        try {
+            sessionRawJson = objectMapper.writeValueAsString(session);
+        } catch (Exception e) {
+            log.warn("Failed to serialize SleepingPill session {}: {}", videoId, e.getMessage());
+        }
 
         Optional<Video> existingOpt = videoRepository.findById(videoId);
+        if (!force && existingOpt.isPresent()) {
+            log.debug("VideoImporter: skipping video {}, already in db", videoId);
+            return;
+        }
         boolean alreadyEnriched = existingOpt.map(v -> v.getTitleEn() != null).orElse(false);
 
         // --- AI enrichment ---
@@ -177,7 +231,7 @@ public class VideoImporter {
         video.setVimeoId(vimeoId);
         video.setLanguage(session.language());
         video.setFormat(session.format());
-        video.setLengthMinutes(parseLength(session.length()));
+        video.setTalkLengthMinutes(parseLength(session.length()));
         video.setRoom(session.room());
         video.setStartTime(parseInstant(session.startTimeZulu()));
         video.setEndTime(parseInstant(session.endTimeZulu()));
@@ -214,7 +268,7 @@ public class VideoImporter {
 
         if (vimeoData != null) {
             video.setThumbnailUrl(vimeoData.thumbnailUrl());
-            video.setVimeoDuration(vimeoData.duration());
+            video.setVideoDuration(vimeoData.duration());
         }
 
         if (existingOpt.isPresent()) {
@@ -227,6 +281,10 @@ public class VideoImporter {
             videoRepository.updateVimeoOembed(videoId, vimeoRawJson);
         }
 
+        if (sessionRawJson != null) {
+            videoRepository.updateSleepingPillData(videoId, sessionRawJson);
+        }
+
         List<SleepingPillSpeaker> speakers = session.speakers() != null ? session.speakers() : List.of();
         for (SleepingPillSpeaker speaker : speakers) {
             if (speaker.name() == null || speaker.name().isBlank())
@@ -235,25 +293,33 @@ public class VideoImporter {
             upsertSpeaker(speakerId, speaker.name());
             upsertVideoSpeaker(videoId, speakerId, speaker.bio());
         }
+
+        log.info("VideoImporter: imported '{}' ({})", video.getTitle(), videoId);
     }
 
-    private void upsertConference(String id, String slug, String name, int year) {
+    @Transactional
+    protected void upsertConference(String id, String slug, String name, int year, int totalVideos) {
         Optional<Conference> opt = conferenceRepository.findById(id);
         if (opt.isPresent()) {
             Conference c = opt.get();
             c.setName(name);
             c.setYear(year);
+            c.setTotalVideos(totalVideos);
             conferenceRepository.update(c);
         } else {
             Conference c = new Conference(id, slug, name, year);
+            c.setTotalVideos(totalVideos);
+            c.setImportedVideos(0);
             c.setCompleted(false);
             conferenceRepository.save(c);
         }
     }
 
-    private void markConferenceCompleted(String id) {
+    private void markConferenceCompleted(String id, int total, int imported) {
         conferenceRepository.findById(id).ifPresent(c -> {
             c.setCompleted(true);
+            c.setTotalVideos(total);
+            c.setImportedVideos(imported);
             conferenceRepository.update(c);
         });
     }

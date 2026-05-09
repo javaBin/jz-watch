@@ -4,7 +4,9 @@ CREATE TABLE conferences (
     slug VARCHAR(200) NOT NULL UNIQUE,
     name VARCHAR(200) NOT NULL,
     year INT  NOT NULL,
-    completed BOOLEAN NOT NULL DEFAULT false
+    completed BOOLEAN NOT NULL DEFAULT false,
+    total_videos INTEGER,
+    imported_videos INTEGER
 );
 
 -- speakers: ID derived from lowercased name, stable across re-imports
@@ -25,7 +27,7 @@ CREATE TABLE videos (
     vimeo_id             VARCHAR(60) NOT NULL,
     language             VARCHAR(10),
     format               VARCHAR(200),
-    length_minutes       INT,
+    talk_length_minutes  INT,
     room                 VARCHAR(200),
     start_time           TIMESTAMPTZ,
     end_time             TIMESTAMPTZ,
@@ -39,9 +41,10 @@ CREATE TABLE videos (
     intended_audience_no TEXT,
     search_vector_en     TSVECTOR,
     search_vector_no     TSVECTOR,
-    vimeo_oembed         JSONB,
+    vimeo_oembed_data    JSONB,
+    sleeping_pill_data   JSONB,
     thumbnail_url        TEXT,
-    vimeo_duration       INT,
+    video_duration       INT,
     base_score           INT         NOT NULL DEFAULT 0, -- recency rank, recalculated on each import
     view_boost           INT         NOT NULL DEFAULT 0, -- updated from video_events at end of import
     created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -110,3 +113,6 @@ CREATE TABLE video_impressions (
 );
 -- Efficient counting of detail-view impressions per video
 CREATE INDEX video_impressions_video_endpoint_idx ON video_impressions (video_id, endpoint);
+
+CREATE INDEX idx_videos_title ON videos (title);
+CREATE INDEX idx_videos_start_time ON videos (start_time);

@@ -9,7 +9,10 @@ export const Route = createFileRoute('/trending')({
     component: TrendingPage,
 });
 
+import { useTitle } from '../hooks/useTitle';
+
 function TrendingPage() {
+    useTitle('Trending');
     const { ref, inView } = useInView();
 
     const {
@@ -26,7 +29,8 @@ function TrendingPage() {
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {
-            return lastPage?.length === 20 ? allPages?.length : undefined;
+            if (!lastPage || lastPage.length < 20) return undefined;
+            return allPages.length;
         },
     });
 
@@ -36,7 +40,7 @@ function TrendingPage() {
         }
     }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-    const results = data?.pages.flat() || [];
+    const results = data?.pages?.flat() || [];
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12">

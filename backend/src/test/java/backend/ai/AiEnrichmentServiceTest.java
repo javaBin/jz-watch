@@ -26,12 +26,12 @@ class AiEnrichmentServiceTest {
     @Mock HttpClient httpClient;
     @Mock BlockingHttpClient blockingHttpClient;
 
-    AiEnrichmentService service;
+    GeminiAiEnrichmentService service;
 
     @BeforeEach
     void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-        service = new AiEnrichmentService(httpClient, new ObjectMapper());
+        service = new GeminiAiEnrichmentService(httpClient, new ObjectMapper());
         setField(service, "apiKey", "test-api-key");
         setField(service, "model", "gemini-2.0-flash");
         when(httpClient.toBlocking()).thenReturn(blockingHttpClient);

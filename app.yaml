@@ -1,0 +1,19 @@
+team: jzwatch
+compute:
+  cpu: 512
+  memory: 1024
+  port: 8080
+  desired_count: 1
+  health_check: /health
+routing:
+  host: watch.javazone.no
+  priority: 100
+
+resources:
+  secrets:
+    - name: db-url
+      env: DB_URL
+    - name: db-user
+      env: DB_USERNAME
+    - name: db-pass
+      env: DB_PASSWORD

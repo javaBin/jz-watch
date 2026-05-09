@@ -22,8 +22,11 @@ export const Route = createFileRoute('/search')({
     },
 });
 
+import { useTitle } from '../hooks/useTitle';
+
 function SearchPage() {
     const { q, lang, tag } = Route.useSearch();
+    useTitle(tag ? `#${tag}` : q ? `Search: ${q}` : 'Search');
     const navigate = useNavigate({ from: Route.fullPath });
     const { ref, inView } = useInView();
 
@@ -43,7 +46,8 @@ function SearchPage() {
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {
-            return lastPage.length === 20 ? allPages.length : undefined;
+            if (!lastPage || lastPage.length < 20) return undefined;
+            return allPages.length;
         },
         enabled: !!q || !!tag,
     });
@@ -54,7 +58,7 @@ function SearchPage() {
         }
     }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-    const results = data?.pages.flat() || [];
+    const results = data?.pages?.flat() || [];
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12">

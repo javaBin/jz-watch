@@ -4,6 +4,9 @@ micronaut:
   http:
     client:
       read-timeout: 300s
+      max-header-size: 65536
+      http2:
+        max-header-list-size: 65536
   router:
     static-resources:
       default:
@@ -13,9 +16,9 @@ micronaut:
 
 datasources:
   default:
-    url: ${JDBC_DATABASE_URL:`jdbc:postgresql://localhost:5432/postgres?currentSchema=watch`}
-    username: ${JDBC_DATABASE_USERNAME:postgres}
-    password: ${JDBC_DATABASE_PASSWORD:postgres}
+    url: ${DB_URL:`jdbc:postgresql://localhost:5432/postgres?currentSchema=watch`}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     db-type: postgres
     dialect: POSTGRES
@@ -34,4 +37,13 @@ google:
     key: ${GOOGLE_API_KEY:}
 
 gemini:
-  model: gemini-2.5-flash
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+
+ai:
+  provider: ${AI_PROVIDER:gemini}
+
+foundry:
+  api:
+    key: ${FOUNDRY_API_KEY:}
+    url: ${FOUNDRY_API_URL:}
+  model: ${FOUNDRY_MODEL:}

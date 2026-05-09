@@ -5,14 +5,17 @@ import { VideoCard } from '../components/VideoCard';
 import { useInView } from 'react-intersection-observer';
 import { useEffect } from 'react';
 
+import { useTitle } from '../hooks/useTitle';
+
 export const Route = createFileRoute('/')({
   component: IndexPage,
 });
 
 function IndexPage() {
+  useTitle();
   const { data: trending, isLoading: trendingLoading } = useQuery({
-    queryKey: ['videos', 'trending'],
-    queryFn: () => api.getTrendingVideos(),
+    queryKey: ['videos', 'trending', 'preview'],
+    queryFn: () => api.getTrendingVideos(0, 4),
   });
 
   const {
@@ -26,8 +29,8 @@ function IndexPage() {
     queryFn: ({ pageParam }) => api.getVideos(pageParam, 20),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
-      // If the last page returned 20 items, there might be more. The next page index is `allPages.length`.
-      return lastPage.length === 20 ? allPages.length : undefined;
+      if (!lastPage || lastPage.length < 20) return undefined;
+      return allPages.length;
     },
   });
 
@@ -39,7 +42,7 @@ function IndexPage() {
     }
   }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const latestVideos = latest?.pages.flat() || [];
+  const latestVideos = latest?.pages?.flat() || [];
 
   return (
     <div className="flex flex-col gap-10 max-w-7xl mx-auto pb-12">

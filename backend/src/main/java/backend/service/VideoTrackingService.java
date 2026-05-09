@@ -65,14 +65,14 @@ public class VideoTrackingService {
      * refreshing from artificially boosting the count.
      */
     @Async(TaskExecutors.BLOCKING)
-    public void trackDetailImpression(String videoId, Integer lengthMinutes, String ipAddress, String userAgent) {
+    public void trackDetailImpression(String videoId, Integer talkLengthMinutes, String ipAddress, String userAgent) {
         if (videoId == null || videoId.isBlank()) {
             return;
         }
 
         try {
             // Default to 120 minutes if length is unknown
-            int durationMinutes = (lengthMinutes != null && lengthMinutes > 0) ? lengthMinutes : 120;
+            int durationMinutes = (talkLengthMinutes != null && talkLengthMinutes > 0) ? talkLengthMinutes : 120;
             Instant since = Instant.now().minus(Duration.ofMinutes(durationMinutes));
 
             boolean alreadyTracked = impressionRepository

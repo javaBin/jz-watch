@@ -23,7 +23,7 @@ public class Video {
     private String vimeoId;
     private String language;
     private String format;
-    private Integer lengthMinutes;
+    private Integer talkLengthMinutes;
     private String room;
     private Instant startTime;
     private Instant endTime;
@@ -45,7 +45,7 @@ public class Video {
     private Integer viewBoost;
 
     private String thumbnailUrl;
-    private Integer vimeoDuration;
+    private Integer videoDuration;
 
     private Instant createdAt;
     private Instant updatedAt;
@@ -117,12 +117,12 @@ public class Video {
         this.format = format;
     }
 
-    public Integer getLengthMinutes() {
-        return lengthMinutes;
+    public Integer getTalkLengthMinutes() {
+        return talkLengthMinutes;
     }
 
-    public void setLengthMinutes(Integer lengthMinutes) {
-        this.lengthMinutes = lengthMinutes;
+    public void setTalkLengthMinutes(Integer talkLengthMinutes) {
+        this.talkLengthMinutes = talkLengthMinutes;
     }
 
     public String getRoom() {
@@ -237,12 +237,12 @@ public class Video {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public Integer getVimeoDuration() {
-        return vimeoDuration;
+    public Integer getVideoDuration() {
+        return videoDuration;
     }
 
-    public void setVimeoDuration(Integer vimeoDuration) {
-        this.vimeoDuration = vimeoDuration;
+    public void setVideoDuration(Integer videoDuration) {
+        this.videoDuration = videoDuration;
     }
 
     public Instant getCreatedAt() {

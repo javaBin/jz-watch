@@ -18,7 +18,10 @@ export const Route = createFileRoute('/explore')({
     },
 });
 
+import { useTitle } from '../hooks/useTitle';
+
 function ExplorePage() {
+    useTitle('Explore');
     const { sort } = Route.useSearch();
     const navigate = useNavigate({ from: Route.fullPath });
     const { ref, inView } = useInView();
@@ -37,7 +40,8 @@ function ExplorePage() {
         },
         initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => {
-            return lastPage.length === 20 ? allPages.length : undefined;
+            if (!lastPage || lastPage.length < 20) return undefined;
+            return allPages.length;
         },
     });
 
@@ -47,7 +51,7 @@ function ExplorePage() {
         }
     }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-    const results = data?.pages.flat() || [];
+    const results = data?.pages?.flat() || [];
 
     return (
         <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-12">

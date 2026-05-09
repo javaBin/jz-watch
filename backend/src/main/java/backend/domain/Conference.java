@@ -11,6 +11,8 @@ public class Conference {
     private String name;
     private Integer year;
     private Boolean completed;
+    private Integer totalVideos;
+    private Integer importedVideos;
 
     public Conference(String id, String slug, String name, Integer year) {
         this.id = id;
@@ -55,8 +57,24 @@ public class Conference {
     public Boolean getCompleted() {
         return completed;
     }
-
+    
     public void setCompleted(Boolean completed) {
         this.completed = completed;
+    }
+
+    public Integer getTotalVideos() {
+        return totalVideos;
+    }
+
+    public void setTotalVideos(Integer totalVideos) {
+        this.totalVideos = totalVideos;
+    }
+
+    public Integer getImportedVideos() {
+        return importedVideos;
+    }
+
+    public void setImportedVideos(Integer importedVideos) {
+        this.importedVideos = importedVideos;
     }
 }

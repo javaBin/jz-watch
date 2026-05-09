@@ -1,6 +1,7 @@
 package backend.controller;
 
 import backend.importer.VideoImporter;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
@@ -10,6 +11,7 @@ import io.micronaut.scheduling.annotation.ExecuteOn;
 import java.util.Map;
 import java.util.Optional;
 
+@Requires(env = "import")
 @Controller("/api/import")
 @ExecuteOn(TaskExecutors.BLOCKING)
 public class ImportController {

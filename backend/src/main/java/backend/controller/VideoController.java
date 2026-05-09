@@ -87,7 +87,7 @@ public class VideoController {
 
         String ip = HttpRequestUtils.extractIp(request);
         String ua = HttpRequestUtils.extractUserAgent(request);
-        trackingService.trackDetailImpression(video.getId(), video.getLengthMinutes(), ip, ua);
+        trackingService.trackDetailImpression(video.getId(), video.getTalkLengthMinutes(), ip, ua);
         trackingService.trackImpressions(relatedResponses.stream().map(VideoResponse::id).collect(Collectors.toList()),
                 "related", ip, ua);
 
@@ -205,7 +205,7 @@ public class VideoController {
                 v.getVimeoId() != null ? VIMEO_EMBED + v.getVimeoId() : null,
                 v.getLanguage(),
                 v.getFormat(),
-                v.getLengthMinutes(),
+                v.getTalkLengthMinutes(),
                 v.getRoom(),
                 v.getStartTime() != null ? v.getStartTime().toString() : null,
                 v.getEndTime() != null ? v.getEndTime().toString() : null,
@@ -215,7 +215,7 @@ public class VideoController {
                 boost,
                 base + boost,
                 v.getThumbnailUrl(),
-                v.getVimeoDuration(),
+                v.getVideoDuration(),
                 viewCount,
                 speakerResponses,
                 related);
@@ -259,7 +259,7 @@ public class VideoController {
                 v.id(), v.conferenceId(), v.title(), v.titleEn(), v.titleNo(),
                 v.abstractText(), v.abstractEn(), v.abstractNo(),
                 v.intendedAudience(), v.vimeoId(), v.embedUrl(),
-                v.language(), v.format(), v.lengthMinutes(), v.room(),
+                v.language(), v.format(), v.talkLengthMinutes(), v.room(),
                 v.startTime(), v.endTime(),
                 v.keywords(), v.aiKeywords(),
                 v.baseScore(), v.viewBoost(), v.totalScore(),
