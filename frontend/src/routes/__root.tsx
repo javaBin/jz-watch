@@ -1,10 +1,13 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { ErrorComponent } from '../components/ErrorComponent';
+import { ToastContainer } from '../components/ToastContainer';
 import { useState } from 'react';
 
 export const Route = createRootRoute({
     component: RootLayout,
+    errorComponent: ErrorComponent,
 });
 
 function RootLayout() {
@@ -21,6 +24,7 @@ function RootLayout() {
                     <Outlet />
                 </main>
             </div>
+            <ToastContainer />
         </div>
     );
 }

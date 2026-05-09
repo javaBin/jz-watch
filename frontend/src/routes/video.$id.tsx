@@ -8,6 +8,8 @@ export const Route = createFileRoute('/video/$id')({
     component: VideoPage,
 });
 
+import { useTitle } from '../hooks/useTitle';
+
 function VideoPage() {
     const { id } = Route.useParams();
 
@@ -15,6 +17,8 @@ function VideoPage() {
         queryKey: ['video', id],
         queryFn: () => api.getVideo(id),
     });
+
+    useTitle(video?.title);
 
     if (isLoading) {
         return (

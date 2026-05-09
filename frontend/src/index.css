@@ -10,6 +10,15 @@
     --color-text-primary: #f4f4f5;
     --color-text-secondary: #a1a1aa;
 
+    --color-primary: #e44d26;
+    --color-primary-foreground: #ffffff;
+    --color-secondary: #27272a;
+    --color-secondary-foreground: #f4f4f5;
+    --color-error: #ef4444;
+    --color-success: #22c55e;
+    --color-card: #18181b;
+    --color-border: #27272a;
+
     --font-sans: 'Inter', system-ui, sans-serif;
 }
 
