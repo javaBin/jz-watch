@@ -54,20 +54,26 @@ const getLangParam = (): string => {
 };
 
 export const api = {
-    async getVideos(page = 0, size = 20): Promise<VideoResponse[]> {
-        const res = await fetch(`${API_BASE}/videos?page=${page}&size=${size}${getLangSuffix()}`);
+    async getVideos(page = 0, size = 20, sort = 'popularity'): Promise<VideoResponse[]> {
+        const res = await fetch(`${API_BASE}/videos?page=${page}&size=${size}&sort=${sort}${getLangSuffix()}`);
         if (!res.ok) throw new Error('Failed to fetch videos');
         return res.json();
     },
 
-    async getTrendingVideos(): Promise<VideoResponse[]> {
-        const res = await fetch(`${API_BASE}/videos/trending${getLangParam()}`);
+    async getTrendingVideos(page = 0, size = 20): Promise<VideoResponse[]> {
+        const res = await fetch(`${API_BASE}/videos/trending?page=${page}&size=${size}${getLangSuffix()}`);
         if (!res.ok) throw new Error('Failed to fetch trending videos');
         return res.json();
     },
 
-    async searchVideos(q: string, lang = ''): Promise<VideoResponse[]> {
-        const res = await fetch(`${API_BASE}/videos/search?q=${encodeURIComponent(q)}&lang=${lang}`);
+    async getVideosByTag(tag: string, page = 0, size = 20): Promise<VideoResponse[]> {
+        const res = await fetch(`${API_BASE}/videos/tag?tag=${encodeURIComponent(tag)}&page=${page}&size=${size}${getLangSuffix()}`);
+        if (!res.ok) throw new Error('Failed to fetch videos by tag');
+        return res.json();
+    },
+
+    async searchVideos(q: string, lang = '', page = 0, size = 20): Promise<VideoResponse[]> {
+        const res = await fetch(`${API_BASE}/videos/search?q=${encodeURIComponent(q)}&lang=${lang}&page=${page}&size=${size}`);
         if (!res.ok) throw new Error('Failed to search videos');
         return res.json();
     },

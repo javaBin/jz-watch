@@ -46,11 +46,19 @@ public class VideoController {
     public List<VideoResponse> listVideos(
             @QueryValue(defaultValue = "0") int page,
             @QueryValue(defaultValue = "20") int size,
+            @QueryValue(defaultValue = "popularity") String sort,
             @QueryValue String lang,
             HttpRequest<?> request) {
 
         int limitedSize = Math.min(size, 20);
-        List<Video> videos = videoRepository.listVideos(limitedSize, page * limitedSize);
+        int offset = page * limitedSize;
+        List<Video> videos = switch (sort) {
+            case "name_asc" -> videoRepository.listVideosByNameAsc(limitedSize, offset);
+            case "name_desc" -> videoRepository.listVideosByNameDesc(limitedSize, offset);
+            case "date_asc" -> videoRepository.listVideosByDateAsc(limitedSize, offset);
+            case "date_desc" -> videoRepository.listVideosByDateDesc(limitedSize, offset);
+            default -> videoRepository.listVideos(limitedSize, offset);
+        };
         List<VideoResponse> responses = toResponses(videos, null, null, lang);
         trackImpressions(responses, "list", request);
         return responses;
@@ -96,12 +104,17 @@ public class VideoController {
     public List<VideoResponse> search(
             @QueryValue String q,
             @QueryValue String lang,
+            @QueryValue(defaultValue = "0") int page,
+            @QueryValue(defaultValue = "20") int size,
             HttpRequest<?> request) {
 
+        int limitedSize = Math.min(size, 50);
+        int offset = page * limitedSize;
+
         List<Video> videos = switch (lang) {
-            case "en" -> videoRepository.searchEn(q);
-            case "no" -> videoRepository.searchNo(q);
-            default -> videoRepository.searchBoth(q);
+            case "en" -> videoRepository.searchEn(q, limitedSize, offset);
+            case "no" -> videoRepository.searchNo(q, limitedSize, offset);
+            default -> videoRepository.searchBoth(q, limitedSize, offset);
         };
         List<VideoResponse> responses = toResponses(videos, null, null, lang);
         trackImpressions(responses, "search", request);
@@ -117,10 +130,28 @@ public class VideoController {
     @Get("/trending")
     public List<VideoResponse> trending(
             @QueryValue String lang,
+            @QueryValue(defaultValue = "0") int page,
+            @QueryValue(defaultValue = "20") int size,
             HttpRequest<?> request) {
-        List<Video> videos = videoRepository.findTrending();
+        int limitedSize = Math.min(size, 50);
+        List<Video> videos = videoRepository.findTrending(limitedSize, page * limitedSize);
         List<VideoResponse> responses = toResponses(videos, null, null, lang);
         trackImpressions(responses, "trending", request);
+        return responses;
+    }
+
+    /** Exact tag match for keywords or AI keywords. */
+    @Get("/tag")
+    public List<VideoResponse> tag(
+            @QueryValue String tag,
+            @QueryValue String lang,
+            @QueryValue(defaultValue = "0") int page,
+            @QueryValue(defaultValue = "20") int size,
+            HttpRequest<?> request) {
+        int limitedSize = Math.min(size, 50);
+        List<Video> videos = videoRepository.findByTag(tag, limitedSize, page * limitedSize);
+        List<VideoResponse> responses = toResponses(videos, null, null, lang);
+        trackImpressions(responses, "tagsearch", request);
         return responses;
     }
 

@@ -9,8 +9,8 @@ interface SidebarProps {
 export function Sidebar({ isOpen }: SidebarProps) {
     const items = [
         { name: 'Home', to: '/', icon: Home },
-        { name: 'Trending', to: '/search', search: { filter: 'trending' }, icon: TrendingUp },
-        { name: 'Explore', to: '/search', search: { q: '' }, icon: Compass },
+        { name: 'Trending', to: '/trending', icon: TrendingUp },
+        { name: 'Explore', to: '/explore', icon: Compass },
     ];
 
     return (
@@ -25,7 +25,7 @@ export function Sidebar({ isOpen }: SidebarProps) {
                     <Link
                         key={item.name}
                         to={item.to}
-                        search={'search' in item ? item.search : undefined}
+                        activeOptions={{ exact: true }}
                         className="flex items-center gap-4 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-surface-hover text-text-primary/90 hover:text-text-primary [&.active]:bg-surface-hover [&.active]:font-semibold"
                     >
                         <item.icon className="h-5 w-5" />

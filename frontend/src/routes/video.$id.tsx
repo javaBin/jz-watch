@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { VideoCard } from '../components/VideoCard';
@@ -57,7 +57,15 @@ function VideoPage() {
                 {video.embedUrl ? (
                     <div className="w-full aspect-video bg-black rounded-xl overflow-hidden relative">
                         <iframe
-                            src={video.embedUrl}
+                            src={(function(url) {
+                                try {
+                                    const u = new URL(url);
+                                    u.searchParams.set('autoplay', '1');
+                                    return u.toString();
+                                } catch(e) {
+                                    return url;
+                                }
+                            })(video.embedUrl)}
                             className="absolute inset-0 w-full h-full"
                             frameBorder="0"
                             allow="autoplay; fullscreen; picture-in-picture"
@@ -88,9 +96,14 @@ function VideoPage() {
                 <div className="bg-surface rounded-xl p-6 mt-2 flex flex-col gap-4">
                     <div className="flex flex-wrap gap-2 text-sm">
                         {(video.aiKeywords || video.keywords)?.map((kw, i) => (
-                            <span key={i} className="text-brand-500 bg-brand-500/10 px-2 py-1 rounded">
+                            <Link 
+                                key={i} 
+                                to="/search"
+                                search={{ tag: kw }}
+                                className="text-brand-500 bg-brand-500/10 hover:bg-brand-500/20 px-2 py-1 rounded transition-colors cursor-pointer"
+                            >
                                 #{kw}
-                            </span>
+                            </Link>
                         ))}
                     </div>
 
