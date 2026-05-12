@@ -5,6 +5,8 @@ import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
 import io.micronaut.http.client.annotation.Client;
 
+import java.util.Optional;
+
 @Client("https://vimeo.com")
 public interface VimeoClient {
 
@@ -13,5 +15,5 @@ public interface VimeoClient {
      * https://vimeo.com/1115459661
      */
     @Get("/api/oembed.json{?url}")
-    VimeoOembedResponse getOembed(@QueryValue String url);
+    Optional<VimeoOembedResponse> getOembed(@QueryValue String url);
 }

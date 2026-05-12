@@ -25,11 +25,14 @@ public class VideoTrackingService {
 
     private final VideoImpressionRepository impressionRepository;
     private final SearchLogRepository searchLogRepository;
+    private final backend.repository.TagSearchRepository tagSearchRepository;
 
     public VideoTrackingService(VideoImpressionRepository impressionRepository,
-            SearchLogRepository searchLogRepository) {
+            SearchLogRepository searchLogRepository,
+            backend.repository.TagSearchRepository tagSearchRepository) {
         this.impressionRepository = impressionRepository;
         this.searchLogRepository = searchLogRepository;
+        this.tagSearchRepository = tagSearchRepository;
     }
 
     /**
@@ -102,6 +105,19 @@ public class VideoTrackingService {
             log.debug("Tracked search query '{}' with {} results", query, resultsCount);
         } catch (Exception e) {
             log.error("Failed to track search query", e);
+        }
+    }
+
+    /**
+     * Asynchronously logs a tag search.
+     */
+    @Async(TaskExecutors.BLOCKING)
+    public void trackTagSearch(String tag, String ipAddress, String userAgent) {
+        try {
+            tagSearchRepository.save(new backend.domain.TagSearch(tag, ipAddress, userAgent, java.time.Instant.now()));
+            log.debug("Tracked tag search '{}'", tag);
+        } catch (Exception e) {
+            log.error("Failed to track tag search", e);
         }
     }
 }

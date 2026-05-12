@@ -13,6 +13,15 @@ micronaut:
         enabled: true
         mapping: /**
         paths: classpath:public
+  serde:
+    jackson:
+      read-features:
+        ALLOW_UNQUOTED_CONTROL_CHARS: true
+        ALLOW_UNESCAPED_CONTROL_CHARS: true
+jackson:
+  parser:
+    allowUnquotedControlChars: true
+
 
 datasources:
   default:
@@ -42,8 +51,8 @@ gemini:
 ai:
   provider: ${AI_PROVIDER:gemini}
 
-foundry:
+openai:
   api:
-    key: ${FOUNDRY_API_KEY:}
-    url: ${FOUNDRY_API_URL:}
-  model: ${FOUNDRY_MODEL:}
+    url: ${OPENAI_API_URL:http://localhost:8888/v1}
+    key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:local-model}

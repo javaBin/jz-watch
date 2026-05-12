@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrendingRouteImport } from './routes/trending'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,6 +20,11 @@ import { Route as DebugCrashRouteImport } from './routes/debug.crash'
 const TrendingRoute = TrendingRouteImport.update({
   id: '/trending',
   path: '/trending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/search': typeof SearchRoute
+  '/stats': typeof StatsRoute
   '/trending': typeof TrendingRoute
   '/debug/crash': typeof DebugCrashRoute
   '/video/$id': typeof VideoIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/search': typeof SearchRoute
+  '/stats': typeof StatsRoute
   '/trending': typeof TrendingRoute
   '/debug/crash': typeof DebugCrashRoute
   '/video/$id': typeof VideoIdRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/search': typeof SearchRoute
+  '/stats': typeof StatsRoute
   '/trending': typeof TrendingRoute
   '/debug/crash': typeof DebugCrashRoute
   '/video/$id': typeof VideoIdRoute
@@ -78,16 +87,25 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/search'
+    | '/stats'
     | '/trending'
     | '/debug/crash'
     | '/video/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explore' | '/search' | '/trending' | '/debug/crash' | '/video/$id'
+  to:
+    | '/'
+    | '/explore'
+    | '/search'
+    | '/stats'
+    | '/trending'
+    | '/debug/crash'
+    | '/video/$id'
   id:
     | '__root__'
     | '/'
     | '/explore'
     | '/search'
+    | '/stats'
     | '/trending'
     | '/debug/crash'
     | '/video/$id'
@@ -97,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExploreRoute: typeof ExploreRoute
   SearchRoute: typeof SearchRoute
+  StatsRoute: typeof StatsRoute
   TrendingRoute: typeof TrendingRoute
   DebugCrashRoute: typeof DebugCrashRoute
   VideoIdRoute: typeof VideoIdRoute
@@ -109,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/trending'
       fullPath: '/trending'
       preLoaderRoute: typeof TrendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -153,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExploreRoute: ExploreRoute,
   SearchRoute: SearchRoute,
+  StatsRoute: StatsRoute,
   TrendingRoute: TrendingRoute,
   DebugCrashRoute: DebugCrashRoute,
   VideoIdRoute: VideoIdRoute,

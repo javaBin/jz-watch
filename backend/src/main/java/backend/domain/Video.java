@@ -32,7 +32,10 @@ public class Video {
     private List<String> keywords;
 
     @TypeDef(type = DataType.STRING_ARRAY)
-    private List<String> aiKeywords;
+    private List<String> aiKeywordsEn;
+
+    @TypeDef(type = DataType.STRING_ARRAY)
+    private List<String> aiKeywordsNo;
 
     private String titleEn;
     private String abstractEn;
@@ -49,6 +52,12 @@ public class Video {
 
     private Instant createdAt;
     private Instant updatedAt;
+
+    @MappedProperty("sleeping_pill_data")
+    private String sleepingPillData;
+
+    @MappedProperty("vimeo_oembed_data")
+    private String vimeoOembedData;
 
     public Video() {
     }
@@ -157,12 +166,21 @@ public class Video {
         this.keywords = keywords;
     }
 
-    public List<String> getAiKeywords() {
-        return aiKeywords;
+
+    public List<String> getAiKeywordsEn() {
+        return aiKeywordsEn;
     }
 
-    public void setAiKeywords(List<String> aiKeywords) {
-        this.aiKeywords = aiKeywords;
+    public void setAiKeywordsEn(List<String> aiKeywordsEn) {
+        this.aiKeywordsEn = aiKeywordsEn;
+    }
+
+    public List<String> getAiKeywordsNo() {
+        return aiKeywordsNo;
+    }
+
+    public void setAiKeywordsNo(List<String> aiKeywordsNo) {
+        this.aiKeywordsNo = aiKeywordsNo;
     }
 
     public String getTitleEn() {
@@ -259,5 +277,21 @@ public class Video {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getSleepingPillData() {
+        return sleepingPillData;
+    }
+
+    public void setSleepingPillData(String sleepingPillData) {
+        this.sleepingPillData = sleepingPillData;
+    }
+
+    public String getVimeoOembedData() {
+        return vimeoOembedData;
+    }
+
+    public void setVimeoOembedData(String vimeoOembedData) {
+        this.vimeoOembedData = vimeoOembedData;
     }
 }

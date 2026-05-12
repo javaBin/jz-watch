@@ -99,7 +99,13 @@ function VideoPage() {
 
                 <div className="bg-surface rounded-xl p-6 mt-2 flex flex-col gap-4">
                     <div className="flex flex-wrap gap-2 text-sm">
-                        {(video.aiKeywords || video.keywords)?.map((kw, i) => (
+                        {(() => {
+                            const allKw = new Set<string>();
+                            if (video.keywords) video.keywords.forEach(k => allKw.add(k));
+                            if (video.aiKeywordsEn) video.aiKeywordsEn.forEach(k => allKw.add(k));
+                            if (video.aiKeywordsNo) video.aiKeywordsNo.forEach(k => allKw.add(k));
+                            return Array.from(allKw);
+                        })().map((kw, i) => (
                             <Link 
                                 key={i} 
                                 to="/search"

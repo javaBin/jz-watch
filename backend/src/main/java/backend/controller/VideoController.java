@@ -152,6 +152,11 @@ public class VideoController {
         List<Video> videos = videoRepository.findByTag(tag, limitedSize, page * limitedSize);
         List<VideoResponse> responses = toResponses(videos, null, null, lang);
         trackImpressions(responses, "tagsearch", request);
+
+        String ip = HttpRequestUtils.extractIp(request);
+        String ua = HttpRequestUtils.extractUserAgent(request);
+        trackingService.trackTagSearch(tag, ip, ua);
+
         return responses;
     }
 
@@ -210,7 +215,8 @@ public class VideoController {
                 v.getStartTime() != null ? v.getStartTime().toString() : null,
                 v.getEndTime() != null ? v.getEndTime().toString() : null,
                 v.getKeywords() != null ? v.getKeywords() : List.of(),
-                v.getAiKeywords() != null ? v.getAiKeywords() : List.of(),
+                v.getAiKeywordsEn() != null ? v.getAiKeywordsEn() : List.of(),
+                v.getAiKeywordsNo() != null ? v.getAiKeywordsNo() : List.of(),
                 base,
                 boost,
                 base + boost,
@@ -261,7 +267,7 @@ public class VideoController {
                 v.intendedAudience(), v.vimeoId(), v.embedUrl(),
                 v.language(), v.format(), v.talkLengthMinutes(), v.room(),
                 v.startTime(), v.endTime(),
-                v.keywords(), v.aiKeywords(),
+                v.keywords(), v.aiKeywordsEn(), v.aiKeywordsNo(),
                 v.baseScore(), v.viewBoost(), v.totalScore(),
                 v.thumbnailUrl(), v.duration(),
                 v.viewCount(),

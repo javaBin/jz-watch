@@ -22,7 +22,8 @@ export interface VideoResponse {
     startTime?: string;
     endTime?: string;
     keywords: string[];
-    aiKeywords: string[];
+    aiKeywordsEn: string[];
+    aiKeywordsNo: string[];
     baseScore: number;
     viewBoost: number;
     totalScore: number;

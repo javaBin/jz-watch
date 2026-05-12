@@ -23,10 +23,11 @@ public class VimeoClientTest {
 
         // When requesting oEmbed data
         var response = vimeoClient.getOembed(videoUrl);
-
-        // Then the response should not be null and contain expected keys
-        assertNotNull(response);
-        assertEquals("video", response.type());
-        assertNotNull(response.title());
+  
+        // Then the response should be present and contain expected keys
+        assertTrue(response.isPresent());
+        var data = response.get();
+        assertEquals("video", data.type());
+        assertNotNull(data.title());
     }
 }

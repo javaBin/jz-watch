@@ -8,6 +8,7 @@
         </encoder>
     </appender>
 
+    <logger name="backend" level="debug" />
     <logger name="io.micronaut.http.client" level="debug" />
     <root level="info">
         <appender-ref ref="STDOUT" />
