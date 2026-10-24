@@ -53,9 +53,11 @@ public class Video {
     private Instant createdAt;
     private Instant updatedAt;
 
+    @TypeDef(type = DataType.JSON)
     @MappedProperty("sleeping_pill_data")
     private String sleepingPillData;
 
+    @TypeDef(type = DataType.JSON)
     @MappedProperty("vimeo_oembed_data")
     private String vimeoOembedData;
 

@@ -1,0 +1,8 @@
+# Terraform working files — never commit these
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfplan
+override.tf
+override.tf.json

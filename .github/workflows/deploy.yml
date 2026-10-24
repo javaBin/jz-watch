@@ -1,0 +1,16 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  id-token: write       # AWS access via OIDC
+  contents: write       # expand commits generated Terraform back to the branch
+  pull-requests: write  # plan comments on PR
+
+jobs:
+  javabin:
+    uses: javaBin/platform/.github/workflows/javabin.yml@main

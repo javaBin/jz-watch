@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { BarChart2, Video, Database, MousePointer, Search, Link2, X, Copy, RefreshCw, Check } from 'lucide-react'
+import { BarChart2, Video, Database, MousePointer, Search, Link2, X, Copy, RefreshCw } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToastStore } from '../lib/store'
 
@@ -9,34 +9,112 @@ export const Route = createFileRoute('/stats')({
     component: StatsPage,
 })
 
-function CopyButton({ text, label }: { text: string, label: string }) {
-    const [copied, setCopied] = useState(false)
-    
+
+function VideoActions({ item }: { item: any }) {
+    const queryClient = useQueryClient()
     const { addToast } = useToastStore()
-    
-    const handleCopy = () => {
-        if (!text) return
-        navigator.clipboard.writeText(text)
-        setCopied(true)
-        addToast(`${label} copied to clipboard`, 'success', 2000)
-        setTimeout(() => setCopied(false), 2000)
+
+    const reImportMutation = useMutation({
+        mutationFn: async ({ type, id }: { type: 'vimeo' | 'ai', id: string }) => {
+            const res = await fetch(`/api/import/${type}/${id}`)
+            if (!res.ok) throw new Error('Failed to re-import')
+            return res.json()
+        },
+        onSuccess: () => {
+            addToast('Successfully re-imported data', 'success')
+            queryClient.invalidateQueries({ queryKey: ['stats'] })
+            queryClient.invalidateQueries({ queryKey: ['stats', 'list'] })
+        },
+        onError: (err) => {
+            addToast(`Re-import failed: ${err.message}`, 'error')
+        }
+    })
+
+    const handlePrintJSON = (item: any) => {
+        try {
+            console.group(`Video Data: ${item.title} (${item.id})`);
+            
+            if (item.sleepingPillData) {
+                console.log("Sleeping Pill Data:", JSON.parse(item.sleepingPillData));
+            }
+
+            if (item.vimeoData) {
+                console.log("Vimeo Data:", JSON.parse(item.vimeoData));
+            }
+
+            if (item.aiEnriched) {
+                console.log("AI Enriched Data:", item.aiEnriched);
+            }
+            
+            console.groupEnd();
+            addToast("Video data printed to console", "success", 2000);
+        } catch (e) {
+            console.error("JSON Parse Error:", e);
+            console.log("Raw Item:", item);
+            addToast("Failed to parse some JSON data, check console", "error");
+        }
     }
 
     return (
-        <button 
-            onClick={handleCopy}
-            className={`p-1.5 rounded-md border transition-all ${copied ? 'bg-green-500/10 border-green-500/50 text-green-500' : 'bg-background border-surface-hover hover:border-text-secondary/50 text-text-secondary hover:text-text-primary'}`}
-            title={`Copy ${label}`}
-        >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-        </button>
+        <div className="flex justify-center gap-3">
+            <button 
+                onClick={() => reImportMutation.mutate({ type: 'vimeo', id: item.id })}
+                disabled={reImportMutation.isPending}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-surface-hover hover:border-green-500/50 hover:text-green-500 transition-all group/btn text-xs font-bold"
+                title="Re-import Vimeo Data"
+            >
+                <RefreshCw size={14} className={`${reImportMutation.isPending && reImportMutation.variables?.type === 'vimeo' ? 'animate-spin' : 'group-hover/btn:rotate-180 transition-transform duration-700'}`} />
+                Vimeo
+            </button>
+            <button 
+                onClick={() => reImportMutation.mutate({ type: 'ai', id: item.id })}
+                disabled={reImportMutation.isPending}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-surface-hover hover:border-brand-500/50 hover:text-brand-500 transition-all group/btn text-xs font-bold"
+                title="Re-run AI Enrichment"
+            >
+                <Database size={14} className={`${reImportMutation.isPending && reImportMutation.variables?.type === 'ai' ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
+                AI
+            </button>
+            <button 
+                onClick={() => handlePrintJSON(item)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-surface-hover hover:border-blue-500/50 hover:text-blue-500 transition-all group/btn text-xs font-bold"
+                title="Print raw JSON to console"
+            >
+                <Copy size={14} />
+                JSON
+            </button>
+        </div>
     )
 }
 
+
 function StatsPage() {
     const [selectedStat, setSelectedStat] = useState<string | null>(null)
-    const queryClient = useQueryClient()
     const { addToast } = useToastStore()
+    const queryClient = useQueryClient()
+
+    const globalImportMutation = useMutation({
+        mutationFn: async ({ endpoint, force }: { endpoint: string, force?: boolean }) => {
+            const url = force ? `/api/import?force=true` : `/api/import/${endpoint}`
+            const res = await fetch(url)
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({ message: 'Global import failed' }))
+                throw new Error(error.message || 'Global import failed')
+            }
+            return res.json()
+        },
+        onSuccess: (data) => {
+            if (data.status === 'started') {
+                addToast(data.message || 'Background process started', 'success')
+            } else {
+                addToast('Import completed successfully', 'success')
+            }
+            queryClient.invalidateQueries({ queryKey: ['stats'] })
+        },
+        onError: (err) => {
+            addToast(`Import failed: ${err.message}`, 'error')
+        }
+    })
 
     const { data: stats } = useQuery({
         queryKey: ['stats'],
@@ -55,26 +133,15 @@ function StatsPage() {
             if (!selectedStat) return null
             const offset = page * limit
             const res = await fetch(`/api/stats/${selectedStat}?limit=${limit}&offset=${offset}`)
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({ message: 'Failed to fetch' }))
+                throw new Error(error.message || 'Failed to fetch')
+            }
             return res.json()
         },
         enabled: !!selectedStat
     })
 
-    const reImportMutation = useMutation({
-        mutationFn: async ({ type, id }: { type: 'vimeo' | 'ai', id: string }) => {
-            const res = await fetch(`/api/import/${type}/${id}`)
-            if (!res.ok) throw new Error('Failed to re-import')
-            return res.json()
-        },
-        onSuccess: () => {
-            addToast('Successfully re-imported data', 'success')
-            queryClient.invalidateQueries({ queryKey: ['stats'] })
-            queryClient.invalidateQueries({ queryKey: ['stats', 'list'] })
-        },
-        onError: (err) => {
-            addToast(`Re-import failed: ${err.message}`, 'error')
-        }
-    })
 
     const rows = [
         {
@@ -106,16 +173,51 @@ function StatsPage() {
         }
     ]
 
-    const handlePrintJSON = (data: any) => {
-        console.log("Sleeping Pill Session Data:", JSON.parse(data));
-        addToast("Sleeping Pill data printed to console", "success", 2000);
-    }
 
     return (
         <div className="max-w-7xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary">System Dashboard</h1>
                 <p className="text-text-secondary">Comprehensive overview of database health, delivery metrics, and user engagement.</p>
+            </div>
+
+            <div className="bg-surface rounded-3xl border border-surface-hover p-8 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-1">
+                        <h2 className="text-xl font-bold text-text-primary">Global Maintenance</h2>
+                        <p className="text-sm text-text-secondary">Bulk operations to sync data across all videos.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                        <button 
+                            onClick={() => globalImportMutation.mutate({ endpoint: 'vimeo' })}
+                            disabled={globalImportMutation.isPending}
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-background border border-surface-hover hover:border-green-500/50 hover:text-green-500 transition-all font-bold text-sm disabled:opacity-50"
+                        >
+                            <Video size={18} className={globalImportMutation.isPending ? 'animate-spin' : ''} />
+                            Sync Missing Vimeo
+                        </button>
+                        <button 
+                            onClick={() => globalImportMutation.mutate({ endpoint: 'ai' })}
+                            disabled={globalImportMutation.isPending}
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-background border border-surface-hover hover:border-brand-500/50 hover:text-brand-500 transition-all font-bold text-sm disabled:opacity-50"
+                        >
+                            <Database size={18} className={globalImportMutation.isPending ? 'animate-spin' : ''} />
+                            Sync Missing AI
+                        </button>
+                        <button 
+                            onClick={() => {
+                                if(confirm('Full System Sync will re-process ALL videos and re-run AI enrichment. This is VERY expensive and will take a long time. Continue?')) {
+                                    globalImportMutation.mutate({ endpoint: '', force: true })
+                                }
+                            }}
+                            disabled={globalImportMutation.isPending}
+                            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-brand-500 text-white hover:bg-brand-600 transition-all font-bold text-sm shadow-lg shadow-brand-500/20 disabled:opacity-50"
+                        >
+                            <RefreshCw size={18} className={globalImportMutation.isPending ? 'animate-spin' : ''} />
+                            Full System Sync
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div className="space-y-12">
@@ -219,7 +321,7 @@ function StatsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-surface-hover/50">
-                                    {listData?.map((item: any, idx: number) => (
+                                    {Array.isArray(listData) && listData.map((item: any, idx: number) => (
                                         <tr key={item.id || item.videoId || idx} className="hover:bg-brand-500/[0.02] transition-colors group">
                                             {selectedStat === 'searches' ? (
                                                 <>
@@ -261,34 +363,7 @@ function StatsPage() {
                                                     </td>
                                                     <td className="px-8 py-5 font-bold text-sm text-text-primary">{item.title}</td>
                                                     <td className="px-8 py-5">
-                                                        <div className="flex justify-center gap-3">
-                                                            <button 
-                                                                onClick={() => reImportMutation.mutate({ type: 'vimeo', id: item.id })}
-                                                                disabled={reImportMutation.isPending}
-                                                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-surface-hover hover:border-green-500/50 hover:text-green-500 transition-all group/btn text-xs font-bold"
-                                                                title="Re-import Vimeo Data"
-                                                            >
-                                                                <RefreshCw size={14} className={`${reImportMutation.isPending ? 'animate-spin' : 'group-hover/btn:rotate-180 transition-transform duration-700'}`} />
-                                                                Vimeo
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => reImportMutation.mutate({ type: 'ai', id: item.id })}
-                                                                disabled={reImportMutation.isPending}
-                                                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-surface-hover hover:border-brand-500/50 hover:text-brand-500 transition-all group/btn text-xs font-bold"
-                                                                title="Re-run AI Enrichment"
-                                                            >
-                                                                <Database size={14} className={`${reImportMutation.isPending ? 'animate-spin' : 'group-hover/btn:scale-110 transition-transform'}`} />
-                                                                AI
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => handlePrintJSON(item.sleepingPillData)}
-                                                                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-surface-hover hover:border-blue-500/50 hover:text-blue-500 transition-all group/btn text-xs font-bold"
-                                                                title="Print raw JSON to console"
-                                                            >
-                                                                <Copy size={14} />
-                                                                JSON
-                                                            </button>
-                                                        </div>
+                                                        <VideoActions item={item} />
                                                     </td>
                                                 </>
                                             )}

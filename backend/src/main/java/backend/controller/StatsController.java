@@ -52,17 +52,22 @@ public class StatsController {
     ) {}
 
     @Serdeable
-    public record StatsVideoResponse(
-        String id,
-        String title,
-        String vimeoOembedData,
-        String sleepingPillData,
+    public record AiEnrichmentData(
         String titleEn,
         String abstractEn,
         String titleNo,
         String abstractNo,
         List<String> aiKeywordsEn,
         List<String> aiKeywordsNo
+    ) {}
+
+    @Serdeable
+    public record StatsVideoResponse(
+        String id,
+        String title,
+        String vimeoData,
+        String sleepingPillData,
+        AiEnrichmentData aiEnriched
     ) {}
 
     @Serdeable
@@ -85,6 +90,16 @@ public class StatsController {
             searchLogRepository.count(),
             tagSearchRepository.count()
         );
+    }
+
+    @Get("/total-videos")
+    public List<StatsVideoResponse> getTotalVideos(
+        @io.micronaut.http.annotation.QueryValue(defaultValue = "10") int limit,
+        @io.micronaut.http.annotation.QueryValue(defaultValue = "0") int offset
+    ) {
+        return videoRepository.listVideos(limit, offset).stream()
+            .map(this::toStatsResponse)
+            .collect(Collectors.toList());
     }
 
     @Get("/missing-vimeo")
@@ -165,12 +180,14 @@ public class StatsController {
             v.getTitle(),
             v.getVimeoOembedData(),
             v.getSleepingPillData(),
-            v.getTitleEn(),
-            v.getAbstractEn(),
-            v.getTitleNo(),
-            v.getAbstractNo(),
-            v.getAiKeywordsEn(),
-            v.getAiKeywordsNo()
+            new AiEnrichmentData(
+                v.getTitleEn(),
+                v.getAbstractEn(),
+                v.getTitleNo(),
+                v.getAbstractNo(),
+                v.getAiKeywordsEn(),
+                v.getAiKeywordsNo()
+            )
         );
     }
 }
