@@ -8,7 +8,7 @@ compute:
   health_check: /health
 routing:
   host: watch.javazone.no
-  priority: 100
+  priority: 150
 
 resources:
   secrets:

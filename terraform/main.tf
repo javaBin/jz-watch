@@ -24,7 +24,7 @@ module "routing" {
   health_check_path      = "/health"
   health_check_matcher   = "200"
   https_listener_arn     = module.platform.https_listener_arn
-  listener_rule_priority = 100
+  listener_rule_priority = 150
   host_header            = "watch.javazone.no"
   route53_zone_id        = module.platform.route53_zone_id
   alb_dns_name           = module.platform.alb_dns_name
